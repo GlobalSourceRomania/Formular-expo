@@ -149,6 +149,7 @@ export default function FormPage() {
   const [countrySearch, setCountrySearch] = useState('');
   const [filteredCountries, setFilteredCountries] = useState(COUNTRIES);
   const [showCountries, setShowCountries] = useState(false);
+  const [isEditingCountry, setIsEditingCountry] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -199,6 +200,7 @@ export default function FormPage() {
     setForm(f => ({ ...f, country: countryName, county: countryName !== 'România' ? '' : f.county }));
     setCountrySearch('');
     setShowCountries(false);
+    setIsEditingCountry(false);
   };
 
   const updateRect = useCallback(() => {
@@ -381,9 +383,12 @@ export default function FormPage() {
                 <input
                   ref={countryInputRef}
                   type="text"
-                  value={countrySearch || form.country}
-                  onChange={e => handleCountrySearch(e.target.value)}
-                  onFocus={() => { setShowCountries(true); }}
+                  value={isEditingCountry ? countrySearch : form.country}
+                  onChange={e => {
+                    setIsEditingCountry(true);
+                    handleCountrySearch(e.target.value);
+                  }}
+                  onFocus={() => { setShowCountries(true); setIsEditingCountry(true); }}
                   placeholder="Cauta tara..."
                   className={inputClass}
                   autoComplete="off"
