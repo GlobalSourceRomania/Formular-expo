@@ -7,6 +7,7 @@ type Submission = {
   created_at: string;
   exhibition: string;
   company: string;
+  country: string;
   county: string;
   first_name: string;
   last_name: string;

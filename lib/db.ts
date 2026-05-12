@@ -31,6 +31,7 @@ export async function initDB() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       exhibition TEXT,
       company TEXT,
+      country TEXT DEFAULT 'România',
       county TEXT,
       first_name TEXT,
       last_name TEXT,

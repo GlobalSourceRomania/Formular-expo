@@ -9,11 +9,11 @@ export async function POST(request: NextRequest) {
     const sql = getDB();
     await sql`
       INSERT INTO submissions (
-        exhibition, company, county, first_name, last_name,
+        exhibition, company, country, county, first_name, last_name,
         position, email, phone, contact_type, equipment_interest,
         current_equipment, additional_info, relevance
       ) VALUES (
-        ${data.exhibition}, ${data.company}, ${data.county},
+        ${data.exhibition}, ${data.company}, ${data.country}, ${data.county},
         ${data.firstName}, ${data.lastName}, ${data.position},
         ${data.email}, ${data.phone}, ${data.type},
         ${data.equipmentInterest}, ${data.currentEquipment},
@@ -45,6 +45,7 @@ export async function PUT(request: NextRequest) {
       UPDATE submissions SET
         exhibition = ${updates.exhibition},
         company = ${updates.company},
+        country = ${updates.country},
         county = ${updates.county},
         first_name = ${updates.first_name},
         last_name = ${updates.last_name},

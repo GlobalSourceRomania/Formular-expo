@@ -7,6 +7,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 type FormData = {
   exhibition: string;
   company: string;
+  country: string;
   county: string;
   firstName: string;
   lastName: string;
@@ -25,6 +26,44 @@ const DEFAULT_EXHIBITIONS = [
   'BSDA - Bucuresti 2026',
   'Robotics Expo - Brasov 2026',
   'Automotiv Expo Sibiu 2026',
+];
+
+const COUNTRIES = [
+  { name: 'România', code: '+40' },
+  { name: 'Albania', code: '+355' },
+  { name: 'Austria', code: '+43' },
+  { name: 'Belgia', code: '+32' },
+  { name: 'Bosnia și Herțegovina', code: '+387' },
+  { name: 'Bulgaria', code: '+359' },
+  { name: 'Croația', code: '+385' },
+  { name: 'Cipru', code: '+357' },
+  { name: 'Cehia', code: '+420' },
+  { name: 'Danemarca', code: '+45' },
+  { name: 'Estonia', code: '+372' },
+  { name: 'Finlanda', code: '+358' },
+  { name: 'Franța', code: '+33' },
+  { name: 'Germania', code: '+49' },
+  { name: 'Grecia', code: '+30' },
+  { name: 'Ungaria', code: '+36' },
+  { name: 'Islanda', code: '+354' },
+  { name: 'Irlanda', code: '+353' },
+  { name: 'Italia', code: '+39' },
+  { name: 'Letonia', code: '+371' },
+  { name: 'Lituania', code: '+370' },
+  { name: 'Luxemburg', code: '+352' },
+  { name: 'Malta', code: '+356' },
+  { name: 'Marea Britanie', code: '+44' },
+  { name: 'Olanda', code: '+31' },
+  { name: 'Norvegia', code: '+47' },
+  { name: 'Polonia', code: '+48' },
+  { name: 'Portugalia', code: '+351' },
+  { name: 'Slovacia', code: '+421' },
+  { name: 'Slovenia', code: '+386' },
+  { name: 'Spania', code: '+34' },
+  { name: 'Suedia', code: '+46' },
+  { name: 'Elveția', code: '+41' },
+  { name: 'Turcia', code: '+90' },
+  { name: 'Ucraina', code: '+380' },
 ];
 
 const COUNTIES = [
@@ -49,6 +88,7 @@ const EQUIPMENT_OPTIONS = [
 const EMPTY_FORM: FormData = {
   exhibition: '',
   company: '',
+  country: 'România',
   county: '',
   firstName: '',
   lastName: '',
@@ -62,13 +102,25 @@ const EMPTY_FORM: FormData = {
   relevance: 0,
 };
 
-function formatPhone(value: string): string {
+function formatPhone(value: string, countryCode: string = '+40'): string {
   const digits = value.replace(/\D/g, '');
+  if (!digits) return countryCode;
+
+  const codeNum = countryCode.slice(1); // ex: '40' din '+40'
   let normalized = digits;
-  if (normalized.startsWith('0')) normalized = '4' + normalized;
-  if (normalized.length > 0 && !normalized.startsWith('40')) normalized = '40' + normalized;
-  const rest = normalized.slice(2);
-  let formatted = '+40';
+
+  // Dacă e țara România și începe cu 0, înlocuiește cu 4
+  if (countryCode === '+40' && normalized.startsWith('0')) {
+    normalized = '4' + normalized.slice(1);
+  }
+
+  // Dacă nu începe cu country code, adaug-o
+  if (!normalized.startsWith(codeNum)) {
+    normalized = codeNum + normalized;
+  }
+
+  const rest = normalized.slice(codeNum.length);
+  let formatted = countryCode;
   if (rest.length > 0) formatted += ' ' + rest.slice(0, 3);
   if (rest.length > 3) formatted += ' ' + rest.slice(3, 6);
   if (rest.length > 6) formatted += ' ' + rest.slice(6, 9);
@@ -94,6 +146,9 @@ export default function FormPage() {
   const [exhibitions, setExhibitions] = useState<string[]>(DEFAULT_EXHIBITIONS);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSug, setShowSug] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+  const [filteredCountries, setFilteredCountries] = useState(COUNTRIES);
+  const [showCountries, setShowCountries] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -102,6 +157,8 @@ export default function FormPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const sugRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const countryInputRef = useRef<HTMLInputElement>(null);
+  const countryDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -118,10 +175,29 @@ export default function FormPage() {
         sugRef.current && !sugRef.current.contains(e.target as Node) &&
         inputRef.current && !inputRef.current.contains(e.target as Node)
       ) setShowSug(false);
+      if (
+        countryDropdownRef.current && !countryDropdownRef.current.contains(e.target as Node) &&
+        countryInputRef.current && !countryInputRef.current.contains(e.target as Node)
+      ) setShowCountries(false);
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, []);
+
+  const handleCountrySearch = (val: string) => {
+    setCountrySearch(val);
+    const filtered = COUNTRIES.filter(c =>
+      c.name.toLowerCase().includes(val.toLowerCase())
+    );
+    setFilteredCountries(filtered);
+    setShowCountries(true);
+  };
+
+  const selectCountry = (countryName: string) => {
+    setForm(f => ({ ...f, country: countryName, county: countryName !== 'România' ? '' : f.county }));
+    setCountrySearch('');
+    setShowCountries(false);
+  };
 
   const updateRect = useCallback(() => {
     if (inputRef.current) setInputRect(inputRef.current.getBoundingClientRect());
@@ -290,31 +366,68 @@ export default function FormPage() {
             </div>
           </div>
 
-          {/* 03 Judet + 04 Reprezentant */}
+          {/* 03 Tara + Judet + 04 Reprezentant */}
           <div className={sectionClass + ' space-y-5'}>
             {form.isExistingCompany && (
               <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3 text-orange-400 text-xs">
                 Compania există în bază. Județul se va completa automat.
               </div>
             )}
-            <div className={form.isExistingCompany ? 'opacity-40 pointer-events-none' : ''}>
-              <span className={labelClass}>03 · Judet</span>
+            <div>
+              <span className={labelClass}>03 · Tara</span>
               <div className="relative">
-                <select
-                  value={form.county}
-                  onChange={e => setForm(f => ({ ...f, county: e.target.value }))}
-                  className={inputClass + ' appearance-none pr-10 cursor-pointer'}
-                  style={{ colorScheme: 'dark' }}
-                  disabled={form.isExistingCompany}
-                >
-                  <option value="">Selecteaza judetul</option>
-                  {COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <input
+                  ref={countryInputRef}
+                  type="text"
+                  value={countrySearch || form.country}
+                  onChange={e => handleCountrySearch(e.target.value)}
+                  onFocus={() => { setShowCountries(true); }}
+                  placeholder="Cauta tara..."
+                  className={inputClass}
+                  autoComplete="off"
+                />
+                {mounted && showCountries && filteredCountries.length > 0 && (
+                  <div
+                    ref={countryDropdownRef}
+                    className="absolute top-full left-0 right-0 mt-1 bg-[#0D1525] border border-white/[0.12] rounded-xl shadow-2xl overflow-hidden z-50 max-h-60 overflow-y-auto"
+                  >
+                    {filteredCountries.map(c => (
+                      <button
+                        key={c.name}
+                        type="button"
+                        onMouseDown={() => selectCountry(c.name)}
+                        className="w-full text-left px-4 py-3 text-white/80 hover:bg-white/[0.06] text-sm border-b border-white/[0.05] last:border-0 transition-colors flex justify-between"
+                      >
+                        <span>{c.name}</span>
+                        <span className="text-white/40 text-xs">{c.code}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
+
+            {form.country === 'România' && (
+              <div className={form.isExistingCompany ? 'opacity-40 pointer-events-none' : ''}>
+                <span className={labelClass}>03b · Judet</span>
+                <div className="relative">
+                  <select
+                    value={form.county}
+                    onChange={e => setForm(f => ({ ...f, county: e.target.value }))}
+                    className={inputClass + ' appearance-none pr-10 cursor-pointer'}
+                    style={{ colorScheme: 'dark' }}
+                    disabled={form.isExistingCompany}
+                  >
+                    <option value="">Selecteaza judetul</option>
+                    {COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            )}
+
             <div>
               <span className={labelClass}>04 · Reprezentant</span>
               <div className="grid grid-cols-2 gap-3">
@@ -381,8 +494,11 @@ export default function FormPage() {
               <input
                 type="tel"
                 value={form.phone}
-                onChange={e => setForm(f => ({ ...f, phone: formatPhone(e.target.value) }))}
-                placeholder="+40 xxx xxx xxx"
+                onChange={e => {
+                  const countryCode = COUNTRIES.find(c => c.name === form.country)?.code || '+40';
+                  setForm(f => ({ ...f, phone: formatPhone(e.target.value, countryCode) }));
+                }}
+                placeholder={COUNTRIES.find(c => c.name === form.country)?.code + ' xxx xxx xxx'}
                 className={inputClass + ' font-mono tracking-wide'}
               />
             </div>
