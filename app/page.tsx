@@ -197,7 +197,7 @@ export default function FormPage() {
 
   const selectCountry = (countryName: string) => {
     setForm(f => ({ ...f, country: countryName, county: countryName !== 'România' ? '' : f.county }));
-    setCountrySearch(countryName);
+    setCountrySearch('');
     setShowCountries(false);
   };
 
@@ -381,9 +381,9 @@ export default function FormPage() {
                 <input
                   ref={countryInputRef}
                   type="text"
-                  value={countrySearch}
+                  value={countrySearch || form.country}
                   onChange={e => handleCountrySearch(e.target.value)}
-                  onFocus={() => { setShowCountries(true); setCountrySearch(''); }}
+                  onFocus={() => { setShowCountries(true); }}
                   placeholder="Cauta tara..."
                   className={inputClass}
                   autoComplete="off"
