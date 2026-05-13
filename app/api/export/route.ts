@@ -11,7 +11,7 @@ export async function GET() {
     const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
     const headers = [
-      'ID', 'Data', 'Expozitie', 'Companie', 'Judet', 'Prenume', 'Nume',
+      'ID', 'Data', 'Expozitie', 'Companie', 'Tara', 'Judet', 'Prenume', 'Nume',
       'Functie', 'Email', 'Telefon', 'Tip', 'Echipament Interes',
       'Echipament Prezent', 'Info Aditionala', 'Relevanta',
     ];
@@ -20,7 +20,7 @@ export async function GET() {
       headers.map(escape).join(','),
       ...rows.map((r: Record<string, unknown>) =>
         [
-          r.id, r.created_at, r.exhibition, r.company, r.county,
+          r.id, r.created_at, r.exhibition, r.company, r.country, r.county,
           r.first_name, r.last_name, r.position, r.email, r.phone,
           r.contact_type, r.equipment_interest, r.current_equipment,
           r.additional_info, r.relevance,
