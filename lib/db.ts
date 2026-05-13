@@ -46,6 +46,11 @@ export async function initDB() {
     )
   `;
 
+  // Adauga coloana country daca nu exista (pentru baze de date existente)
+  await sql`
+    ALTER TABLE submissions ADD COLUMN IF NOT EXISTS country TEXT DEFAULT 'România'
+  `;
+
   await sql`
     INSERT INTO exhibitions (name) VALUES
       ('BSDA - Bucuresti 2026'),
